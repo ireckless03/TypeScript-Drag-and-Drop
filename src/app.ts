@@ -1,3 +1,46 @@
+// Project State management
+
+class ProjectState {
+  // array of function refs
+  private listeners: any[] = [];
+  private projects: any[] = [];
+  private static instance: ProjectState;
+
+  private constructor() {}
+
+  // create new ProjectState if not already existing
+  static getInstance() {
+    if (this.instance) {
+      return this.instance;
+    }
+    this.instance = new ProjectState();
+    return this.instance;
+  }
+
+  // adds a listener function
+  addListener(listenerFn: Function) {
+    this.listeners.push(listenerFn);
+  }
+
+  // add projects to project list
+  addProject(title: string, description: string, numOfPeople: number) {
+    const newProject = {
+      id: Math.random().toString(),
+      title: title,
+      description: description,
+      people: numOfPeople,
+    };
+    this.projects.push(newProject);
+
+    // all listener functions being executed on the copy of projects
+    for (const listenerFn of this.listeners) {
+      listenerFn(this.projects.slice());
+    }
+  }
+}
+// create instance of projectstate to use globally
+const projectState = ProjectState.getInstance();
+
 // Validation Interface with mandatory value and optional propers
 interface Validatable {
   value: string | number;
@@ -72,16 +115,17 @@ class ProjectList {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
+  assignedProjects: any[];
 
   // storing value in that prop
   constructor(private type: "active" | "finished") {
     // selecting project-list element
-    this.templateElement = <HTMLTemplateElement>(
-      document.getElementById("project-list")!
-    );
+    this.templateElement = 
+      document.getElementById("project-list")! as HTMLTemplateElement;
 
     // Get the host div element
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
+    this.assignedProjects = [];
 
     // Import the content of the template element and create a new node
     const importedNode = document.importNode(
@@ -93,8 +137,27 @@ class ProjectList {
     this.element = importedNode.firstElementChild as HTMLElement;
     // access to dynamic core elements
     this.element.id = `${this.type}-projects`;
+
+    // adding projects to assignedProjects
+    projectState.addListener((projects: any[]) => {
+      this.assignedProjects = projects;
+      this.renderProjects();
+    });
+
     this.attach();
     this.renderContent();
+  }
+
+  // selects the
+  private renderProjects() {
+    const listEl = document.getElementById(
+      `${this.type}-projects-list`
+    )! as HTMLUListElement;
+    for (const prjItem of this.assignedProjects) {
+      const listItem = document.createElement("li");
+      listItem.textContent = prjItem.title;
+      listEl.appendChild(listItem);
+    }
   }
 
   //render content inside the header/h2
@@ -124,9 +187,8 @@ class ProjectInput {
 
   constructor() {
     // Get the template element
-    this.templateElement = <HTMLTemplateElement>(
-      document.getElementById("project-input")!
-    );
+    this.templateElement = 
+      document.getElementById("project-input")! as HTMLTemplateElement;
 
     // Get the host div element
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
@@ -206,7 +268,7 @@ class ProjectInput {
     const userInput = this.gatherUserInput();
     if (Array.isArray(userInput)) {
       const [title, desc, people] = userInput;
-      console.log(title, desc, people);
+      projectState.addProject(title, desc, people);
       this.clearInputs();
     }
   }
@@ -224,5 +286,5 @@ class ProjectInput {
 
 // Create an instance of the ProjectInput class
 const projInput = new ProjectInput();
-const activePrjList = new ProjectList('active');
-const finishedPrjList = new ProjectList('finished');
+const activePrjList = new ProjectList("active");
+const finishedPrjList = new ProjectList("finished");
