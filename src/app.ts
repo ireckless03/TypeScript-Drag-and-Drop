@@ -67,6 +67,52 @@ function autobind(_1: any, _2: string, descriptor: PropertyDescriptor) {
   return adjDescriptor;
 }
 
+// Project List Class to render
+class ProjectList {
+  templateElement: HTMLTemplateElement;
+  hostElement: HTMLDivElement;
+  element: HTMLElement;
+
+  // storing value in that prop
+  constructor(private type: "active" | "finished") {
+    // selecting project-list element
+    this.templateElement = <HTMLTemplateElement>(
+      document.getElementById("project-list")!
+    );
+
+    // Get the host div element
+    this.hostElement = document.getElementById("app")! as HTMLDivElement;
+
+    // Import the content of the template element and create a new node
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true
+    );
+
+    // Get the first element(section) from project-list and store it
+    this.element = importedNode.firstElementChild as HTMLElement;
+    // access to dynamic core elements
+    this.element.id = `${this.type}-projects`;
+    this.attach();
+    this.renderContent();
+  }
+
+  //render content inside the header/h2
+  private renderContent() {
+    const listId = `${this.type}-projects-list`;
+    // selects ul under the listid
+    this.element.querySelector("ul")!.id = listId;
+    //setting text content of h2 tag
+    this.element.querySelector("h2")!.textContent =
+      this.type.toLocaleUpperCase() + " PROJECTS";
+  }
+
+  // render list to dom, before closing tag of host element
+  private attach() {
+    this.hostElement.insertAdjacentElement("beforeend", this.element);
+  }
+}
+
 // Project Input Class
 class ProjectInput {
   templateElement: HTMLTemplateElement;
@@ -178,3 +224,5 @@ class ProjectInput {
 
 // Create an instance of the ProjectInput class
 const projInput = new ProjectInput();
+const activePrjList = new ProjectList('active');
+const finishedPrjList = new ProjectList('finished');
