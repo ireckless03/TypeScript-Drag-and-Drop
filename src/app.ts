@@ -1,8 +1,26 @@
+// Project Type
+enum ProjectStatus {
+  Active,
+  Finished,
+}
+
+class Project {
+  constructor(
+    public id: string,
+    public title: string,
+    public description: string,
+    public people: number,
+    public status: ProjectStatus
+  ) {}
+}
+
 // Project State management
+// encode a function type with one word.
+type Listener = (items: Project[]) => void;
 
 class ProjectState {
   // array of function refs
-  private listeners: any[] = [];
+  private listeners: Listener[] = [];
   private projects: any[] = [];
   private static instance: ProjectState;
 
@@ -18,18 +36,19 @@ class ProjectState {
   }
 
   // adds a listener function
-  addListener(listenerFn: Function) {
+  addListener(listenerFn: Listener) {
     this.listeners.push(listenerFn);
   }
 
   // add projects to project list
   addProject(title: string, description: string, numOfPeople: number) {
-    const newProject = {
-      id: Math.random().toString(),
-      title: title,
-      description: description,
-      people: numOfPeople,
-    };
+    const newProject = new Project(
+      Math.random().toString,
+      title,
+      description,
+      numOfPeople,
+      ProjectStatus.Active
+    );
     this.projects.push(newProject);
 
     // all listener functions being executed on the copy of projects
@@ -115,13 +134,14 @@ class ProjectList {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
-  assignedProjects: any[];
+  assignedProjects: Project[];
 
   // storing value in that prop
   constructor(private type: "active" | "finished") {
     // selecting project-list element
-    this.templateElement = 
-      document.getElementById("project-list")! as HTMLTemplateElement;
+    this.templateElement = document.getElementById(
+      "project-list"
+    )! as HTMLTemplateElement;
 
     // Get the host div element
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
@@ -139,7 +159,7 @@ class ProjectList {
     this.element.id = `${this.type}-projects`;
 
     // adding projects to assignedProjects
-    projectState.addListener((projects: any[]) => {
+    projectState.addListener((projects: Project[]) => {
       this.assignedProjects = projects;
       this.renderProjects();
     });
@@ -148,7 +168,7 @@ class ProjectList {
     this.renderContent();
   }
 
-  // selects the
+  // selects the list type and renders the projects to that list
   private renderProjects() {
     const listEl = document.getElementById(
       `${this.type}-projects-list`
@@ -187,8 +207,9 @@ class ProjectInput {
 
   constructor() {
     // Get the template element
-    this.templateElement = 
-      document.getElementById("project-input")! as HTMLTemplateElement;
+    this.templateElement = document.getElementById(
+      "project-input"
+    )! as HTMLTemplateElement;
 
     // Get the host div element
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
