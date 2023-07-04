@@ -129,8 +129,53 @@ function autobind(_1: any, _2: string, descriptor: PropertyDescriptor) {
   return adjDescriptor;
 }
 
+// Component Base Class
+abstract class Component<T extends HTMLElement, U extends HTMLElement> {
+  templateElement: HTMLTemplateElement;
+  hostElement: T;
+  element: U;
+
+  constructor(
+    templateId: string,
+    hostElementId: string,
+    insertAtStart: boolean,
+    newElementId?: string
+  ) {
+    this.templateElement = document.getElementById(
+      templateId
+    )! as HTMLTemplateElement;
+
+    // Get the host div element
+    this.hostElement = document.getElementById(hostElementId)! as T;
+
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true
+    );
+
+    // Get the first element(section) from project-list and store it
+    this.element = importedNode.firstElementChild as U;
+    // access to dynamic core elements
+    if (newElementId) {
+      this.element.id = newElementId;
+    }
+
+    this.attach(insertAtStart);
+  }
+
+  private attach(insertAtBeginning: boolean) {
+    this.hostElement.insertAdjacentElement(
+      insertAtBeginning ? "afterbegin" : "beforeend",
+      this.element
+    );
+  }
+
+  abstract configure(): void;
+  abstract renderContent(): void;
+}
+
 // Project List Class to render
-class ProjectList {
+class ProjectList extends Component<HTMLDivElement, HTMLElement> {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
@@ -138,28 +183,28 @@ class ProjectList {
 
   // storing value in that prop
   constructor(private type: "active" | "finished") {
-    // selecting project-list element
-    this.templateElement = document.getElementById(
-      "project-list"
-    )! as HTMLTemplateElement;
+    super("project-list", "app", false, `${type}-projects`);
 
-    // Get the host div element
-    this.hostElement = document.getElementById("app")! as HTMLDivElement;
     this.assignedProjects = [];
-
-    // Import the content of the template element and create a new node
-    const importedNode = document.importNode(
-      this.templateElement.content,
-      true
-    );
-
-    // Get the first element(section) from project-list and store it
-    this.element = importedNode.firstElementChild as HTMLElement;
-    // access to dynamic core elements
-    this.element.id = `${this.type}-projects`;
 
     // filter projects by active/finished, store and render
     // executes on every element on projects array, if returns true, items are then kept in relevant projects
+
+    this.configure();
+    this.renderContent();
+  }
+
+  //render content inside the header/h2
+  renderContent() {
+    const listId = `${this.type}-projects-list`;
+    // selects ul under the listid
+    this.element.querySelector("ul")!.id = listId;
+    //setting text content of h2 tag
+    this.element.querySelector("h2")!.textContent =
+      this.type.toLocaleUpperCase() + " PROJECTS";
+  }
+
+  configure() {
     projectState.addListener((projects: Project[]) => {
       const relevantProjects = projects.filter((prj) => {
         if (this.type === "active") {
@@ -170,9 +215,6 @@ class ProjectList {
       this.assignedProjects = relevantProjects;
       this.renderProjects();
     });
-
-    this.attach();
-    this.renderContent();
   }
 
   // selects the list type and renders the projects to that list. Will also rerender list when new project is added
@@ -180,32 +222,17 @@ class ProjectList {
     const listEl = document.getElementById(
       `${this.type}-projects-list`
     )! as HTMLUListElement;
-    listEl.innerHTML = '';
+    listEl.innerHTML = "";
     for (const prjItem of this.assignedProjects) {
       const listItem = document.createElement("li");
       listItem.textContent = prjItem.title;
       listEl.appendChild(listItem);
     }
   }
-
-  //render content inside the header/h2
-  private renderContent() {
-    const listId = `${this.type}-projects-list`;
-    // selects ul under the listid
-    this.element.querySelector("ul")!.id = listId;
-    //setting text content of h2 tag
-    this.element.querySelector("h2")!.textContent =
-      this.type.toLocaleUpperCase() + " PROJECTS";
-  }
-
-  // render list to dom, before closing tag of host element
-  private attach() {
-    this.hostElement.insertAdjacentElement("beforeend", this.element);
-  }
 }
 
 // Project Input Class
-class ProjectInput {
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLFormElement;
@@ -214,24 +241,7 @@ class ProjectInput {
   peopleInputElement: HTMLInputElement;
 
   constructor() {
-    // Get the template element
-    this.templateElement = document.getElementById(
-      "project-input"
-    )! as HTMLTemplateElement;
-
-    // Get the host div element
-    this.hostElement = document.getElementById("app")! as HTMLDivElement;
-
-    // Import the content of the template element and create a new node
-    const importedNode = document.importNode(
-      this.templateElement.content,
-      true
-    );
-
-    // Get the first child element of the imported node, assuming it's a form element
-    this.element = importedNode.firstElementChild as HTMLFormElement;
-    this.element.id = "user-input";
-
+    super("project-input", "app", true, "user-input");
     //storing inputs as properties
     this.titleInputElement = this.element.querySelector(
       "#title"
@@ -242,11 +252,16 @@ class ProjectInput {
     this.peopleInputElement = this.element.querySelector(
       "#people"
     ) as HTMLInputElement;
-
     // Attach the form element to the host div
     this.configure();
-    this.attach();
   }
+
+  // .bind(this) - passing this will refer to class
+  configure() {
+    this.element.addEventListener("submit", this.submitHandler);
+  }
+
+  renderContent(): void {}
 
   // used to gather all info from user input, validate and return
   private gatherUserInput(): [string, string, number] | void {
@@ -300,16 +315,6 @@ class ProjectInput {
       projectState.addProject(title, desc, people);
       this.clearInputs();
     }
-  }
-
-  // .bind(this) - passing this will refer to class
-  private configure() {
-    this.element.addEventListener("submit", this.submitHandler);
-  }
-
-  private attach() {
-    // Insert the form element as the first child of the host div
-    this.hostElement.insertAdjacentElement("afterbegin", this.element);
   }
 }
 
