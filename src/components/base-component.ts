@@ -40,4 +40,3 @@ export default abstract class Component<T extends HTMLElement, U extends HTMLEle
   abstract configure(): void;
   abstract renderContent(): void;
 }
-
