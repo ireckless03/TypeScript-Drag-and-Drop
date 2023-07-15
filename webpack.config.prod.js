@@ -1,8 +1,9 @@
 const path = require('path');
+const CleanPlugin = require('clean-webpack-plugin');
 
 // NodeJS export syntax: Of a JS object which is the configuration object picked up by Webpack:
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   // Nope:
   // devServer: {
   //     historyApiFallback: true,
@@ -42,7 +43,6 @@ module.exports = {
   // Tell Webpack that there will be generated source code maps already which it should extract and basically wire it correctly to the bundle it generates
   // So that once we get such bundle, we still have a great development experience
   // It's an entry
-  devtool: 'none',
 
   // It tells Webpack what to do with the .ts files. How to work with the files it finds.
   module: {
@@ -67,6 +67,10 @@ module.exports = {
     // Webpack will look for those files and then bundle all the files with those extensions which we are importing together
     extensions: ['.ts', '.js']
   },
-
+  // We will use clean plugin to clear the dist folder before new outputs are written there so we always have lastest files
+  // applied to general workflow
+  plugins: [
+    new CleanPlugin.CleanWebpackPlugin()
+  ]
 };
 
