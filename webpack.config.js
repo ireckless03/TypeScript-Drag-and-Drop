@@ -42,7 +42,7 @@ module.exports = {
   // Tell Webpack that there will be generated source code maps already which it should extract and basically wire it correctly to the bundle it generates
   // So that once we get such bundle, we still have a great development experience
   // It's an entry
-  devtool: 'none',
+  devtool: 'inline-source-map',
 
   // It tells Webpack what to do with the .ts files. How to work with the files it finds.
   module: {

@@ -37,7 +37,6 @@ module.exports = {
     // Returns the absolute path to a certain folder. __dirname is a special constant, available globally in a NodeJS environment. (And Webpack uses NodeJS to execute the files)
     // And 'dist' means it will create a dist folder
     path: path.resolve(__dirname, 'dist'),
-    publicPath: '/dist/'
   },
 
   // Tell Webpack that there will be generated source code maps already which it should extract and basically wire it correctly to the bundle it generates
